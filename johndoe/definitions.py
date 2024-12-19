@@ -1,0 +1,5 @@
+PROJECT_NAME = "John Doe"
+VERSION = "0.1.0"
+WIDTH = 640
+HEIGHT = 360
+FPS = 60
