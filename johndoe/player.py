@@ -9,7 +9,7 @@ class Bullet(pygame.sprite.Sprite):
         super().__init__(*groups)
         self.time_alive = 1500
         self.time_started = pygame.time.get_ticks()
-        self.image = pygame.image.load("bullet.png").convert_alpha()
+        self.image = pygame.image.load("assets/bullet.png").convert_alpha()
         self.image = pygame.transform.rotate(self.image, angle)
         self.rect = self.image.get_frect(center=pos)
         self.angle = math.radians(angle)
@@ -27,7 +27,7 @@ class Bullet(pygame.sprite.Sprite):
 class PlayerSprite(pygame.sprite.Sprite):
     def __init__(self, pos: tuple[int, int], *groups: pygame.sprite.AbstractGroup):
         super().__init__(*groups)
-        self.image = pygame.image.load("johndoespr.png").convert_alpha()
+        self.image = pygame.image.load("assets/johndoespr.png").convert_alpha()
         self.rect = self.image.get_frect()
         self.original_image = self.image
         self.rect.center = pos

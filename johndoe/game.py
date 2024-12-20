@@ -1,6 +1,8 @@
 import pygame
 import sys
 from .definitions import PROJECT_NAME, VERSION, WIDTH, HEIGHT, FPS
+from .scene_manager import SceneManager
+from .title_scene import TitleScene
 from .level_scene import LevelScene
 
 
@@ -15,23 +17,29 @@ class Game:
         pygame.mouse.set_visible(False)
         self.clock = pygame.time.Clock()
         self.running = True
-        self.level_scene = LevelScene()
+        self.scene_manager = SceneManager()
         self.fps = FPS
+        self.setup()
+
+    def setup(self):
+        self.scene_manager.add_scene("title", TitleScene())
+        self.scene_manager.add_scene("level", LevelScene())
+        self.scene_manager.change_scene("title")
 
     def update(self, dt: float):
-        self.level_scene.update(dt)
+        self.scene_manager.update(dt)
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
 
-            self.level_scene.handle_events(event)
+            self.scene_manager.handle_events(event)
 
     def draw(self):
         self.screen.fill((0, 0, 0, 0))
         self.main_surface.fill((75, 89, 69))
-        self.level_scene.draw(self.main_surface)
+        self.scene_manager.draw(self.main_surface)
         self.screen.blit(
             pygame.transform.scale(self.main_surface, self.screen_rect.size), (0, 0)
         )
