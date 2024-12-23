@@ -4,7 +4,11 @@ import math
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(
-        self, pos: tuple[int, int], angle, *groups: pygame.sprite.AbstractGroup
+        self,
+        pos: tuple[int, int],
+        angle,
+        direction,
+        *groups: pygame.sprite.AbstractGroup
     ) -> None:
         super().__init__(*groups)
         self.time_alive = 1500
@@ -13,12 +17,14 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, angle)
         self.rect = self.image.get_frect(center=pos)
         self.angle = math.radians(angle)
-        self.vel_x = math.cos(self.angle) * 200
-        self.vel_y = -math.sin(self.angle) * 200
+        self.speed = 350
+        self.direction = direction
 
     def update(self, dt: float):
-        self.rect.x += self.vel_x * dt
-        self.rect.y += self.vel_y * dt
+        if self.direction.magnitude() != 0:
+            self.direction = self.direction.normalize()
+        self.rect.x += self.direction.x * self.speed * dt
+        self.rect.y += self.direction.y * self.speed * dt
 
         if pygame.time.get_ticks() - self.time_started > self.time_alive:
             self.kill()
@@ -71,7 +77,8 @@ class Player:
         else:
             self.direction.x = 0
 
-        direction = pygame.mouse.get_pos() - self.player_sprite.pos
+        mouse_pos = pygame.mouse.get_pos()
+        direction = mouse_pos - self.player_sprite.pos
         _, angle = direction.as_polar()
         self.player_sprite.image = pygame.transform.rotate(
             self.player_sprite.original_image, -angle
@@ -81,7 +88,9 @@ class Player:
         )
         mouse_key = pygame.mouse.get_just_pressed()
         if mouse_key[0]:
-            bullet = Bullet(self.player_sprite.rect.center, -angle)
+            player_vec = pygame.math.Vector2(self.player_sprite.rect.center)
+            direction = mouse_pos - player_vec
+            bullet = Bullet(self.player_sprite.rect.center, -angle, direction)
             self.bullets.add(bullet)
 
     def draw(self, surface: pygame.Surface):
