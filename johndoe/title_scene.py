@@ -33,13 +33,14 @@ class TitleScene(Scene):
         pass
 
     def draw(self, surface: pygame.Surface):
-        self.surface.fill("aquamarine2")
+        self.surface.fill((0, 0, 0, 0))
         self.surface.blit(self.title_surface, self.title_rect)
         self.surface.blit(self.start_game_label, self.start_game_rect)
         surface.blit(self.surface, (0, 0))
 
     def handle_events(self, event: pygame.event.Event):
         keys = pygame.key.get_just_pressed()
+        mouse_key = pygame.mouse.get_pressed()
 
-        if keys[pygame.K_RETURN]:
+        if keys[pygame.K_RETURN] or mouse_key[0]:
             self.scene_manager.change_scene("level")

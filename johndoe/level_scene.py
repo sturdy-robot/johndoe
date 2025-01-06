@@ -19,6 +19,6 @@ class LevelScene(Scene):
         self.player.update(dt)
 
     def draw(self, surface: pygame.Surface):
-        self.surface.fill((0, 0, 0, 0))
+        self.surface.fill("aquamarine4")
         self.player.draw(self.surface)
         surface.blit(self.surface, (0, 0))
