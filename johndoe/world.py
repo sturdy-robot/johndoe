@@ -25,13 +25,11 @@ class WorldScene(Scene):
             pygame.image.load("assets/enemy1_spr.png").convert_alpha(),
             pygame.image.load("assets/vindoe_spr.png").convert_alpha(),
         ]
-        enemies = [
-            Enemy(
-                random.choice(enemies_spr),
-                50,
-                (random.choice([0, 100]), random.choice([0, 100])),
-            )
-        ]
+        enemies = []
+        for _ in range(50):
+            sprite = random.choice(enemies_spr)
+            pos = (random.randint(0, 1000), random.randint(0, 1000))
+            enemies.append(Enemy(sprite, 50, pos))
         en_spr = [enemy.sprite for enemy in enemies]
         self.enemies.add(en_spr)
         self.player_sprite_group.add(self.player.player_sprite)

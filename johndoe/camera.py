@@ -24,14 +24,13 @@ class Camera(Scene):
         pass
 
     def update(self, dt: float):
-        pass
+        for sprite in self.sprites():
+            sprite.update(dt)
 
     def sprites(self) -> list[pygame.sprite.Sprite]:
         sprites = []
         for group in self.groups:
             sprites.extend(group.sprites())
-
-        sprites.extend(self.player_sprite.sprites())
 
         return sprites
 
@@ -47,5 +46,7 @@ class Camera(Scene):
         for sprite in sorted(self.sprites(), key=lambda spr: spr.rect.centery):
             offset_pos = sprite.rect.topleft - self.offset
             self.surface.blit(sprite.image, offset_pos)
+
+        self.surface.blit(player_spr.image, player_spr.rect.topleft - self.offset)
 
         surface.blit(self.surface, self.rect)
