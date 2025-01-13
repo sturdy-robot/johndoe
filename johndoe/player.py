@@ -33,11 +33,48 @@ class Bullet(pygame.sprite.Sprite):
 class PlayerSprite(pygame.sprite.Sprite):
     def __init__(self, pos: tuple[int, int], *groups: pygame.sprite.AbstractGroup):
         super().__init__(*groups)
-        self.image = pygame.image.load("assets/johndoespr.png").convert_alpha()
+        self.images = {
+            "right": pygame.image.load("assets/johndoe_spr.png").convert_alpha(),
+            "left": pygame.transform.flip(
+                pygame.image.load("assets/johndoe_spr.png"), True, False
+            ),
+        }
+        self.image = pygame.image.load("assets/johndoe_spr.png").convert_alpha()
         self.rect = self.image.get_frect()
         self.original_image = self.image
         self.rect.center = pos
-        self.pos = pygame.math.Vector2(pos)
+        self.facing = "right"
+
+    def get_image(self):
+        self.image = self.images[self.facing]
+
+
+class PlayerStats:
+    def __init__(self):
+        self._health = 100
+        self._energy = 100
+        self.max_health = 100
+        self.max_energy = 100
+
+    @property
+    def health(self) -> int:
+        return self._health
+
+    @health.setter
+    def health(self, value: int):
+        value = min(value, self.max_health)
+        value = max(0, value)
+        self._health = value
+
+    @property
+    def energy(self) -> int:
+        return self._energy
+
+    @energy.setter
+    def energy(self, value: int):
+        value = min(value, self.max_energy)
+        value = max(0, value)
+        self._energy = value
 
 
 class Player:
@@ -46,7 +83,6 @@ class Player:
         self.direction = pygame.math.Vector2()
         self.speed = 150
         self.target_direction = pygame.math.Vector2()
-        self.bullets = pygame.sprite.Group()
 
     def update(self, dt: float):
         if self.direction.magnitude() != 0:
@@ -54,11 +90,6 @@ class Player:
 
         self.player_sprite.rect.x += self.direction.x * self.speed * dt
         self.player_sprite.rect.y += self.direction.y * self.speed * dt
-
-        self.player_sprite.pos.x = self.player_sprite.rect.x
-        self.player_sprite.pos.y = self.player_sprite.rect.y
-
-        self.bullets.update(dt)
 
     def handle_events(self, event: pygame.event.Event):
         keys = pygame.key.get_pressed()
@@ -72,32 +103,11 @@ class Player:
 
         if keys[pygame.K_a]:
             self.direction.x = -1
+            self.player_sprite.facing = "left"
         elif keys[pygame.K_d]:
             self.direction.x = 1
+            self.player_sprite.facing = "right"
         else:
             self.direction.x = 0
 
-        mouse_pos = pygame.mouse.get_pos()
-        direction = mouse_pos - self.player_sprite.pos
-        _, angle = direction.as_polar()
-        self.player_sprite.image = pygame.transform.rotate(
-            self.player_sprite.original_image, -angle
-        )
-        self.player_sprite.rect = self.player_sprite.image.get_frect(
-            center=self.player_sprite.rect.center
-        )
-        mouse_key = pygame.mouse.get_just_pressed()
-        if mouse_key[0]:
-            player_vec = pygame.math.Vector2(self.player_sprite.rect.center)
-            direction = mouse_pos - player_vec
-            bullet = Bullet(self.player_sprite.rect.center, -angle, direction)
-            self.bullets.add(bullet)
-
-    def draw(self, surface: pygame.Surface):
-        mouse_pos = pygame.mouse.get_pos()
-
-        surface.blit(self.player_sprite.image, self.player_sprite.rect)
-        pygame.draw.circle(surface, "red", mouse_pos, 2)
-        if self.bullets.sprites():
-            self.bullets.draw(surface)
-        self.player_sprite.rect.clamp_ip(surface.get_rect())
+        self.player_sprite.get_image()
