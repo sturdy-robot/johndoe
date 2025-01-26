@@ -2,6 +2,7 @@ import pygame
 import random
 
 from johndoe.enemy import Enemy
+from johndoe.game_clock import GameClock
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 from .player import Player
@@ -19,6 +20,7 @@ class WorldScene(Scene):
         self.camera = Camera(
             self.player_sprite_group, self.player_sprite_group, self.enemies
         )
+        self.game_clock = GameClock()
 
     def setup(self):
         enemies_spr = [
@@ -29,19 +31,57 @@ class WorldScene(Scene):
         for _ in range(50):
             sprite = random.choice(enemies_spr)
             pos = (random.randint(0, 1000), random.randint(0, 1000))
-            enemies.append(Enemy(sprite, 50, pos))
+            enemies.append(Enemy(sprite, 50, self.player_sprite_group, pos))
         en_spr = [enemy.sprite for enemy in enemies]
         self.enemies.add(en_spr)
         self.player_sprite_group.add(self.player.player_sprite)
         self.camera.setup()
 
     def handle_events(self, event: pygame.event.Event):
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_ESCAPE:
+                self.game_clock.toggle_pause()
+
+        if self.game_clock.paused:
+            return
+
         self.player.handle_events(event)
         self.camera.handle_events(event)
 
+    def handle_enemy_collisions(self):
+        for i, enemy1 in enumerate(self.enemies.sprites()):
+            for j, enemy2 in enumerate(self.enemies.sprites()):
+                if i != j and enemy1.rect.colliderect(enemy2.rect):
+                    if enemy1.rect.centerx < enemy2.rect.centerx:
+                        enemy1.rect.x -= 1
+                        enemy2.rect.x += 1
+                    else:
+                        enemy1.rect.x += 1
+                        enemy2.rect.x -= 1
+
+                    if enemy1.rect.centery < enemy2.rect.centery:
+                        enemy1.rect.y -= 1
+                        enemy2.rect.y += 1
+                    else:
+                        enemy1.rect.y += 1
+                        enemy2.rect.y -= 1
+
+    def handle_player_collisions(self):
+        for enemy in self.enemies.sprites():
+            if self.player_sprite_group.sprite.rect.colliderect(enemy.rect):
+                pass
+
+    def handle_collisions(self):
+        self.handle_enemy_collisions()
+        self.handle_player_collisions()
+
     def update(self, dt: float):
+        self.game_clock.update()
+        if self.game_clock.paused:
+            return
         self.player.update(dt)
         self.camera.update(dt)
+        self.handle_collisions()
 
     def draw(self, surface: pygame.Surface):
         self.surface.fill("aquamarine4")

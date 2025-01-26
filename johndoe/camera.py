@@ -1,6 +1,5 @@
 import pygame
 
-from johndoe.player import Player, PlayerSprite
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 

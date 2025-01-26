@@ -41,6 +41,7 @@ class PlayerSprite(pygame.sprite.Sprite):
         }
         self.image = pygame.image.load("assets/johndoe_spr.png").convert_alpha()
         self.rect = self.image.get_frect()
+        self.hitbox = self.rect.inflate(-5, -5)
         self.original_image = self.image
         self.rect.center = pos
         self.facing = "right"
@@ -94,17 +95,17 @@ class Player:
     def handle_events(self, event: pygame.event.Event):
         keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_w]:
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
             self.direction.y = -1
-        elif keys[pygame.K_s]:
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
             self.direction.y = 1
         else:
             self.direction.y = 0
 
-        if keys[pygame.K_a]:
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.direction.x = -1
             self.player_sprite.facing = "left"
-        elif keys[pygame.K_d]:
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.direction.x = 1
             self.player_sprite.facing = "right"
         else:
