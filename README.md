@@ -9,3 +9,5 @@ They will try, but no one can stop you.
 Initially, I wanted to do some sort of topdown-shooter game. But I've been more interested in doing something resembling **Vampire Survivors**. So that's what I think I'll be doing.
 
 It fits the theme of having some random things going on in the game, and organizing the chaotic environment through the upgrades and collecting coins to upgrade.
+
+In this game, the player will have the automatic weapons that you can have in **Vampire Survivors**, but you will also have special powers that you can spend energy to use. The player levels up, and the monsters can also level up.
