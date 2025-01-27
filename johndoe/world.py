@@ -48,31 +48,41 @@ class WorldScene(Scene):
         self.player.handle_events(event)
         self.camera.handle_events(event)
 
-    def handle_enemy_collisions(self):
+    def handle_enemy_collisions(self, dt):
         for i, enemy1 in enumerate(self.enemies.sprites()):
             for j, enemy2 in enumerate(self.enemies.sprites()):
                 if i != j and enemy1.rect.colliderect(enemy2.rect):
-                    if enemy1.rect.centerx < enemy2.rect.centerx:
-                        enemy1.rect.x -= 1
-                        enemy2.rect.x += 1
-                    else:
-                        enemy1.rect.x += 1
-                        enemy2.rect.x -= 1
+                    overlap_x = min(
+                        enemy1.rect.right - enemy2.rect.left,
+                        enemy2.rect.right - enemy1.rect.left,
+                    )
+                    overlap_y = min(
+                        enemy1.rect.bottom - enemy2.rect.top,
+                        enemy2.rect.bottom - enemy1.rect.top,
+                    )
 
-                    if enemy1.rect.centery < enemy2.rect.centery:
-                        enemy1.rect.y -= 1
-                        enemy2.rect.y += 1
+                    if overlap_x < overlap_y:
+                        if enemy1.rect.centerx < enemy2.rect.centerx:
+                            enemy1.rect.x -= overlap_x / 2
+                            enemy2.rect.x += overlap_x / 2
+                        else:
+                            enemy1.rect.x += overlap_x / 2
+                            enemy2.rect.x -= overlap_x / 2
                     else:
-                        enemy1.rect.y += 1
-                        enemy2.rect.y -= 1
+                        if enemy1.rect.centery < enemy2.rect.centery:
+                            enemy1.rect.y -= overlap_y / 2
+                            enemy2.rect.y += overlap_y / 2
+                        else:
+                            enemy1.rect.y += overlap_y / 2
+                            enemy2.rect.y -= overlap_y / 2
 
     def handle_player_collisions(self):
         for enemy in self.enemies.sprites():
             if self.player_sprite_group.sprite.rect.colliderect(enemy.rect):
                 pass
 
-    def handle_collisions(self):
-        self.handle_enemy_collisions()
+    def handle_collisions(self, dt: float):
+        self.handle_enemy_collisions(dt)
         self.handle_player_collisions()
 
     def update(self, dt: float):
@@ -81,7 +91,7 @@ class WorldScene(Scene):
             return
         self.player.update(dt)
         self.camera.update(dt)
-        self.handle_collisions()
+        self.handle_collisions(dt)
 
     def draw(self, surface: pygame.Surface):
         self.surface.fill("aquamarine4")
