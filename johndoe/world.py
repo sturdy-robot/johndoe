@@ -7,6 +7,7 @@ from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 from .player import Player
 from .camera import Camera
+from .ui import UI
 
 
 class WorldScene(Scene):
@@ -21,6 +22,7 @@ class WorldScene(Scene):
             self.player_sprite_group, self.player_sprite_group, self.enemies
         )
         self.game_clock = GameClock()
+        self.ui = None
 
     def setup(self):
         enemies_spr = [
@@ -36,6 +38,8 @@ class WorldScene(Scene):
         self.enemies.add(en_spr)
         self.player_sprite_group.add(self.player.player_sprite)
         self.camera.setup()
+        self.ui = UI(self.player)
+        self.ui.setup()
 
     def handle_events(self, event: pygame.event.Event):
         if event.type == pygame.KEYUP:
@@ -76,14 +80,14 @@ class WorldScene(Scene):
                             enemy1.rect.y += overlap_y / 2
                             enemy2.rect.y -= overlap_y / 2
 
-    def handle_player_collisions(self):
+    def handle_player_collisions(self, dt: float):
         for enemy in self.enemies.sprites():
             if self.player_sprite_group.sprite.rect.colliderect(enemy.rect):
                 pass
 
     def handle_collisions(self, dt: float):
         self.handle_enemy_collisions(dt)
-        self.handle_player_collisions()
+        self.handle_player_collisions(dt)
 
     def update(self, dt: float):
         self.game_clock.update()
@@ -96,4 +100,5 @@ class WorldScene(Scene):
     def draw(self, surface: pygame.Surface):
         self.surface.fill("aquamarine4")
         self.camera.draw(self.surface)
+        self.ui.draw(self.surface)
         surface.blit(self.surface, (0, 0))

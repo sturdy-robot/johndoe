@@ -50,6 +50,45 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.image = self.images[self.facing]
 
 
+class PlayerExp:
+    def __init__(self):
+        self.lvl = 1
+        self.exp = 0.0
+        self._exp_to_next_lvl = 0.0
+        self._total_exp = 0.0
+
+    @property
+    def total_exp(self) -> float:
+        self._total_exp = self._get_total_exp(self.lvl)
+        return float(self._total_exp + self.exp)
+
+    @property
+    def exp_to_next_level(self) -> float:
+        if self.lvl < 0:
+            raise ValueError("Invalid value for level")
+
+        total_exp_to_next_lvl = self._get_total_exp(self.lvl + 1)
+        return total_exp_to_next_lvl - self.total_exp
+
+    def _get_total_exp(self, lvl: int):
+        n = lvl
+        return (5 * (n**3)) / 4
+
+    def add_exp(self, exp_points: float):
+        if exp_points < 0:
+            return
+
+        points = exp_points
+
+        while points >= self.exp_to_next_level:
+            exp_to_next_lvl = self.exp_to_next_level
+            points -= exp_to_next_lvl
+            self.lvl += 1
+
+        self.exp += points
+        self._total_exp = self.total_exp
+
+
 class PlayerStats:
     def __init__(self):
         self._health = 100
@@ -84,6 +123,8 @@ class Player:
         self.direction = pygame.math.Vector2()
         self.speed = 150
         self.target_direction = pygame.math.Vector2()
+        self.stats = PlayerStats()
+        self.exp = PlayerExp()
 
     def update(self, dt: float):
         if self.direction.magnitude() != 0:

@@ -1,6 +1,5 @@
 import pygame
 from pygame.sprite import GroupSingle
-from .player import Player
 
 
 class EnemySprite(pygame.sprite.Sprite):
@@ -13,7 +12,11 @@ class EnemySprite(pygame.sprite.Sprite):
         *groups: pygame.sprite.AbstractGroup
     ):
         super().__init__(*groups)
-        self.image = enemy_sprite
+        self.images = {
+            "right": pygame.transform.flip(enemy_sprite, True, False),
+            "left": enemy_sprite,
+        }
+        self.image = self.images["right"]
         self.rect = self.image.get_frect()
         self.hitbox = self.rect.inflate(-5, -5)
         self.direction = pygame.math.Vector2()
@@ -22,7 +25,12 @@ class EnemySprite(pygame.sprite.Sprite):
         self.player = player
 
     def get_player_direction(self):
+        if self.direction.x > 0:
+            self.image = self.images["right"]
+        else:
+            self.image = self.images["left"]
         player = self.player.sprite
+
         self.direction.x = player.rect.centerx - self.rect.centerx
         self.direction.y = player.rect.centery - self.rect.centery
 

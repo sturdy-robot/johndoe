@@ -1,5 +1,7 @@
 import pygame
 
+from johndoe.ui import UI
+
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 
