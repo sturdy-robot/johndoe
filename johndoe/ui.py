@@ -11,7 +11,21 @@ class UI(Scene):
         self.player = player
         self.healthbar_rect = pygame.Rect(0, 0, 150, 10)
         self.energybar_rect = pygame.Rect(0, 0, 150, 10)
+        self.power_rect = pygame.Rect(0, 0, 24, 24)
         self.expbar_rect = pygame.Rect(0, 0, 150, 8)
+        self.power_rects = []
+
+    def setup_powers(self):
+        self.power_rects.clear()
+        self.power_rect.midbottom = self.surface.get_rect().midbottom
+        total_x_size = (self.power_rect.width + 6) * 4
+        powers_rect = pygame.Rect(0, 0, total_x_size, self.power_rect.height)
+        powers_rect.midbottom = self.surface.get_rect().midbottom
+
+        for i in range(4):
+            rect = self.power_rect.copy()
+            rect.x = powers_rect.x + i * (self.power_rect.width + 3)
+            self.power_rects.append(rect)
 
     def setup_bars(self):
         corner = self.surface.get_rect().topleft
@@ -22,11 +36,12 @@ class UI(Scene):
         )
         self.expbar_rect.topleft = (
             self.energybar_rect.bottomleft[0],
-            self.energybar_rect.bottomleft[1] + 5,
+            self.energybar_rect.bottomleft[1] + 3,
         )
 
     def setup(self):
         self.setup_bars()
+        self.setup_powers()
 
     def update(self, dt: float):
         pass
@@ -68,10 +83,14 @@ class UI(Scene):
             ),
         )
 
+    def draw_powers(self):
+        for power in self.power_rects:
+            pygame.draw.rect(self.surface, (34, 34, 34), power)
+
     def draw_expbar(self):
         current_value = self.player.exp.exp
         max_value = self.player.exp.exp_to_next_level
-        pygame.draw.rect(self.surface, (34, 34, 34), self.expbar_rect.inflate(6, 5))
+        pygame.draw.rect(self.surface, (34, 34, 34), self.expbar_rect.inflate(6, 2))
         ratio = current_value / max_value
         bar_width = self.expbar_rect.width * ratio
         pygame.draw.rect(
@@ -92,4 +111,5 @@ class UI(Scene):
 
     def draw(self, surface: pygame.Surface):
         self.draw_bars()
+        self.draw_powers()
         surface.blit(self.surface, (0, 0))
