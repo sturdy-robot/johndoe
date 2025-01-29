@@ -4,6 +4,7 @@ from .definitions import PROJECT_NAME, VERSION, WIDTH, HEIGHT, FPS
 from .scene_manager import SceneManager
 from .title_scene import TitleScene
 from .world import WorldScene
+from .game_over_scene import GameOverScene
 
 
 class Game:
@@ -24,6 +25,7 @@ class Game:
     def setup(self):
         self.scene_manager.add_scene("title", TitleScene())
         self.scene_manager.add_scene("level", WorldScene())
+        self.scene_manager.add_scene("game_over", GameOverScene())
         self.scene_manager.change_scene("title")
 
     def update(self, dt: float):

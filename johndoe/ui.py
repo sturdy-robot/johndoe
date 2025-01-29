@@ -29,7 +29,7 @@ class UI(Scene):
 
     def setup_bars(self):
         corner = self.surface.get_rect().topleft
-        self.healthbar_rect.topleft = corner[0] + 20, corner[1] + 10
+        self.healthbar_rect.topleft = corner[0] + 5, corner[1] + 5
         self.energybar_rect.topleft = (
             self.healthbar_rect.bottomleft[0],
             self.healthbar_rect.bottomleft[1] + 5,

@@ -132,6 +132,7 @@ class Player:
 
         self.player_sprite.rect.x += self.direction.x * self.speed * dt
         self.player_sprite.rect.y += self.direction.y * self.speed * dt
+        self.player_sprite.hitbox.center = self.player_sprite.rect.center
 
     def handle_events(self, event: pygame.event.Event):
         keys = pygame.key.get_pressed()

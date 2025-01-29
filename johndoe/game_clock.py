@@ -1,7 +1,9 @@
 import pygame
 
+from .singleton import Singleton
 
-class GameClock:
+
+class GameClock(metaclass=Singleton):
     def __init__(self):
         self.total_time = 0
         self.paused = False
@@ -19,3 +21,6 @@ class GameClock:
 
     def get_time(self):
         return self.total_time
+
+    def reset_clock(self):
+        self.total_time = 0
