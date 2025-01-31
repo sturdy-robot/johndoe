@@ -28,6 +28,8 @@ class TitleScene(Scene):
         self.start_game_rect.bottomright = self.title_rect.bottomright
         self.start_game_rect.x -= 65
         self.start_game_rect.y -= 100
+        pygame.mixer.music.load("assets/title_music.mp3")
+        pygame.mixer.music.play(loops=-1)
 
     def update(self, dt: float):
         pass

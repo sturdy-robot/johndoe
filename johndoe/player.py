@@ -19,6 +19,7 @@ class Bullet(pygame.sprite.Sprite):
         self.time_started = self.game_clock.get_time()
         self.image = pygame.image.load("assets/bullet.png").convert_alpha()
         self.image = pygame.transform.rotate(self.image, angle)
+        self.image = pygame.transform.scale_by(self.image, 1.5)
         self.rect = self.image.get_frect(center=pos)
         self.angle = math.radians(angle)
         self.speed = 350

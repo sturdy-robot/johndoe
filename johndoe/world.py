@@ -3,9 +3,15 @@ import pygame
 from pygame.freetype import Font
 import random
 
+from johndoe import collectibles
 from johndoe.enemy import Enemy
 from johndoe.game_clock import GameClock
-from johndoe.weapon import Weapon
+from johndoe.weapon import WeaponManager, WeaponType
+from johndoe.collectibles import (
+    CollectibleSprite,
+    CollectibleType,
+    get_collectible_probability,
+)
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 from .player import Player
@@ -21,13 +27,19 @@ class WorldScene(Scene):
         self.player_sprite_group = pygame.sprite.GroupSingle()
         self.enemies_spr = pygame.sprite.Group()
         self.projectiles = pygame.sprite.Group()
-        self.weapons = []
+        self.weapons = WeaponManager(
+            self.player_sprite_group, self.enemies_spr, self.projectiles
+        )
+        self.active_collectibles = self.get_default_collectibles()
+        self.collectibles_spr = pygame.sprite.Group()
         self.font = Font("assets/Silver.ttf", size=30)
         self.font.antialiased = False
         self.game_clock = GameClock()
         self.player_score = 0
         self.min_enemies = 5
         self.max_enemies = 20
+        self.min_health = 10
+        self.max_health = 20
         self.update_enemy_max_count = 2 * 60 * 1000
         self.last_update_count = self.game_clock.get_time()
         self.enemies = []
@@ -36,22 +48,33 @@ class WorldScene(Scene):
             self.player_sprite_group,
             self.enemies_spr,
             self.projectiles,
+            self.collectibles_spr,
         )
         self.ui = None
         self.spr_enemies = [
             pygame.image.load("assets/enemy1_spr.png").convert_alpha(),
             pygame.image.load("assets/vindoe_spr.png").convert_alpha(),
         ]
-        self.enemy_spawn_cooldown = 5000
+        self.enemy_spawn_cooldown = 10000
         self.last_enemy_spawn = 0
         self.scene_manager = SceneManager()
 
+    def get_default_collectibles(self):
+        return [
+            None,
+            CollectibleType.HEALTH,
+            CollectibleType.BULLET,
+            CollectibleType.GUN,
+            CollectibleType.FIRE,
+        ]
+
     def setup(self):
-        self.weapons.clear()
         self.enemies.clear()
         self.enemies_spr.empty()
         self.projectiles.empty()
         self.player_sprite_group.empty()
+        self.collectibles_spr.empty()
+        self.active_collectibles = self.get_default_collectibles()
         self.min_enemies = 5
         self.max_enemies = 20
         self.update_enemy_max_count = 2 * 60 * 1000
@@ -64,12 +87,13 @@ class WorldScene(Scene):
         en_spr = [enemy.sprite for enemy in self.enemies]
         self.last_time_dmg_applied = 0
         self.enemies_spr.add(en_spr)
-        self.weapons = [
-            Weapon(self.player, self.enemies_spr, 20, 100000, 350, self.projectiles)
-        ]
+        self.weapons.reset()
         self.camera.setup()
         self.ui = UI(self.player)
         self.ui.setup()
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load("assets/game_music.mp3")
+        pygame.mixer.music.play(loops=-1)
 
     def check_is_game_over(self):
         if self.player.stats.health <= 0:
@@ -85,9 +109,8 @@ class WorldScene(Scene):
             self.min_enemies = int(self.min_enemies)
             self.max_enemies *= 1.25
             self.max_enemies = int(self.max_enemies)
-            print("Updated enemy count!")
-            print(self.min_enemies)
-            print(self.max_enemies)
+            self.min_health *= 1.05
+            self.max_health *= 1.05
             self.player.speed *= 1.10
             self.last_update_count = now
 
@@ -103,7 +126,7 @@ class WorldScene(Scene):
             pos_x = self.player_sprite_group.sprite.rect.x + math.cos(angle) * distance
             pos_y = self.player_sprite_group.sprite.rect.y + math.sin(angle) * distance
             pos = (pos_x, pos_y)
-            health = random.randint(10, 20)
+            health = random.randint(self.min_health, self.max_health)
             damage = random.randint(1, 10)
             shield = random.randint(1, 10)
             self.enemies.append(
@@ -170,27 +193,67 @@ class WorldScene(Scene):
                 self.player.stats.health -= damage
                 self.last_time_dmg_applied = now
 
+        for collectible in self.collectibles_spr.sprites():
+            if self.player.player_sprite.hitbox.colliderect(collectible.rect):
+                match collectible.c_type:
+                    case CollectibleType.HEALTH:
+                        self.player.stats.health += 10
+                    case CollectibleType.GUN:
+                        self.weapons.add_weapon(WeaponType.GUN)
+                    case CollectibleType.BULLET:
+                        self.weapons.add_projectiles(WeaponType.GUN)
+                    case CollectibleType.FIRE:
+                        self.weapons.add_weapon(WeaponType.FIRE)
+                    case CollectibleType.GAS:
+                        self.weapons.add_projectiles(WeaponType.FIRE)
+                collectible.kill()
+
     def handle_collisions(self, dt: float):
         self.handle_enemy_collisions(dt)
         self.handle_player_collisions(dt)
 
-    def update_weapons(self, dt: float):
-        for weapon in self.weapons:
-            weapon.update(dt)
+    def get_collectible(self, pos: tuple[float, float]):
+        probabilities = get_collectible_probability()
+        collectible_types = list(probabilities.keys())
+        for collectible in collectible_types:
+            if collectible not in self.active_collectibles:
+                del probabilities[collectible]
+
+        all_types = list(probabilities.keys())
+        probs = list(probabilities.values())
+
+        all_types.append("None")
+        probs.append(0.7)
+
+        collectible = random.choices(all_types, probs)[0]
+        if collectible != "None":
+            collectible = CollectibleSprite(pos, collectible, self.collectibles_spr)
 
     def check_enemy_death(self):
         enemies = self.enemies.copy()
         for enemy in enemies:
             if enemy.stats.health == 0:
+                self.get_collectible(enemy.sprite.rect.center)
                 self.enemies.remove(enemy)
                 enemy.sprite.kill()
                 self.player_score += 10
+
+    def update_player_collectibles(self):
+        if (
+            WeaponType.FIRE in self.weapons.get_weapon_types()
+            and CollectibleType.GAS not in self.active_collectibles
+        ):
+            self.active_collectibles.append(CollectibleType.GAS)
 
     def update(self, dt: float):
         self.game_clock.update()
         if self.game_clock.paused:
             return
-        self.update_weapons(dt)
+        if not self.enemies:
+            self.spawn_enemies()
+
+        self.update_player_collectibles()
+        self.weapons.update(dt)
         self.player.update(dt)
         self.camera.update(dt)
         self.handle_collisions(dt)
@@ -225,7 +288,7 @@ class WorldScene(Scene):
         self.surface.blit(surface, rect)
 
     def draw(self, surface: pygame.Surface):
-        self.surface.fill("aquamarine4")
+        self.surface.fill("darkorchid4")
         self.camera.draw(self.surface)
         self.ui.draw(self.surface)
         self.draw_current_time()
