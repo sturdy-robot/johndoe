@@ -1,7 +1,5 @@
 import pygame
 
-from johndoe.ui import UI
-
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 
@@ -45,8 +43,14 @@ class Camera(Scene):
         )
 
         for sprite in sorted(self.sprites(), key=lambda spr: spr.rect.centery):
-            offset_pos = sprite.rect.topleft - self.offset
-            self.surface.blit(sprite.image, offset_pos)
+            offset_pos = pygame.Rect(
+                sprite.rect.x - self.offset.x,
+                sprite.rect.y - self.offset.y,
+                sprite.rect.width,
+                sprite.rect.height,
+            )
+            if self.rect.colliderect(offset_pos):
+                self.surface.blit(sprite.image, offset_pos)
 
         self.surface.blit(player_spr.image, player_spr.rect.topleft - self.offset)
 

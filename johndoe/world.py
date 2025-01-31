@@ -5,6 +5,7 @@ import random
 
 from johndoe.enemy import Enemy
 from johndoe.game_clock import GameClock
+from johndoe.weapon import Weapon
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 from .player import Player
@@ -20,15 +21,22 @@ class WorldScene(Scene):
         self.player_sprite_group = pygame.sprite.GroupSingle()
         self.enemies_spr = pygame.sprite.Group()
         self.projectiles = pygame.sprite.Group()
-        self.weapons_spr = pygame.sprite.Group()
         self.weapons = []
         self.font = Font("assets/Silver.ttf", size=30)
         self.font.antialiased = False
+        self.game_clock = GameClock()
+        self.player_score = 0
+        self.min_enemies = 5
+        self.max_enemies = 20
+        self.update_enemy_max_count = 2 * 60 * 1000
+        self.last_update_count = self.game_clock.get_time()
         self.enemies = []
         self.camera = Camera(
-            self.player_sprite_group, self.player_sprite_group, self.enemies_spr
+            self.player_sprite_group,
+            self.player_sprite_group,
+            self.enemies_spr,
+            self.projectiles,
         )
-        self.game_clock = GameClock()
         self.ui = None
         self.spr_enemies = [
             pygame.image.load("assets/enemy1_spr.png").convert_alpha(),
@@ -43,15 +51,22 @@ class WorldScene(Scene):
         self.enemies.clear()
         self.enemies_spr.empty()
         self.projectiles.empty()
-        self.weapons_spr.empty()
         self.player_sprite_group.empty()
+        self.min_enemies = 5
+        self.max_enemies = 20
+        self.update_enemy_max_count = 2 * 60 * 1000
+        self.last_update_count = self.game_clock.get_time()
         self.game_clock.reset_clock()
+        self.player_score = 0
         self.player = Player(self.surface.get_rect().center)
         self.player_sprite_group.add(self.player.player_sprite)
         self.spawn_enemies()
         en_spr = [enemy.sprite for enemy in self.enemies]
         self.last_time_dmg_applied = 0
         self.enemies_spr.add(en_spr)
+        self.weapons = [
+            Weapon(self.player, self.enemies_spr, 20, 100000, 350, self.projectiles)
+        ]
         self.camera.setup()
         self.ui = UI(self.player)
         self.ui.setup()
@@ -63,11 +78,24 @@ class WorldScene(Scene):
     def check_enemy_spawn_time(self):
         now = self.game_clock.get_time()
         time = now - self.last_enemy_spawn
+        update_count = now - self.last_update_count
+
+        if update_count > self.update_enemy_max_count:
+            self.min_enemies *= 1.25
+            self.min_enemies = int(self.min_enemies)
+            self.max_enemies *= 1.25
+            self.max_enemies = int(self.max_enemies)
+            print("Updated enemy count!")
+            print(self.min_enemies)
+            print(self.max_enemies)
+            self.player.speed *= 1.10
+            self.last_update_count = now
+
         if time > self.enemy_spawn_cooldown:
             self.spawn_enemies()
 
     def spawn_enemies(self):
-        num_enemies = random.randint(5, 20)
+        num_enemies = random.randint(self.min_enemies, self.max_enemies)
         for _ in range(num_enemies):
             sprite = random.choice(self.spr_enemies)
             distance = random.randint(300, 500)
@@ -124,6 +152,12 @@ class WorldScene(Scene):
                             enemy1.rect.y += overlap_y / 2
                             enemy2.rect.y -= overlap_y / 2
 
+        for enemy in self.enemies_spr.sprites():
+            for projectile in self.projectiles.sprites():
+                if enemy.hitbox.colliderect(projectile.rect):
+                    enemy.stats.health -= projectile.damage
+                    projectile.kill()
+
     def handle_player_collisions(self, dt: float):
         damage = 0
         now = self.game_clock.get_time()
@@ -140,23 +174,39 @@ class WorldScene(Scene):
         self.handle_enemy_collisions(dt)
         self.handle_player_collisions(dt)
 
+    def update_weapons(self, dt: float):
+        for weapon in self.weapons:
+            weapon.update(dt)
+
     def check_enemy_death(self):
         enemies = self.enemies.copy()
         for enemy in enemies:
             if enemy.stats.health == 0:
                 self.enemies.remove(enemy)
                 enemy.sprite.kill()
+                self.player_score += 10
 
     def update(self, dt: float):
         self.game_clock.update()
         if self.game_clock.paused:
             return
+        self.update_weapons(dt)
         self.player.update(dt)
         self.camera.update(dt)
         self.handle_collisions(dt)
         self.check_enemy_spawn_time()
         self.check_enemy_death()
         self.check_is_game_over()
+
+    def draw_player_score(self):
+        position = self.surface.get_rect().topright
+        surface, rect = self.font.render(
+            f"Score: {self.player_score}", fgcolor=(255, 255, 255), size=18
+        )
+        rect.topright = position
+        rect.x -= 5
+        rect.y += 5
+        self.surface.blit(surface, rect)
 
     def draw_current_time(self):
         position = self.surface.get_rect().midtop
@@ -171,6 +221,7 @@ class WorldScene(Scene):
             "Time: " + time_result, fgcolor=(255, 255, 255)
         )
         rect.midtop = position
+        rect.y += 5
         self.surface.blit(surface, rect)
 
     def draw(self, surface: pygame.Surface):
@@ -178,4 +229,5 @@ class WorldScene(Scene):
         self.camera.draw(self.surface)
         self.ui.draw(self.surface)
         self.draw_current_time()
+        self.draw_player_score()
         surface.blit(self.surface, (0, 0))

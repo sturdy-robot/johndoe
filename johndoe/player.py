@@ -1,5 +1,6 @@
 import pygame
 import math
+from .game_clock import GameClock
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -7,12 +8,15 @@ class Bullet(pygame.sprite.Sprite):
         self,
         pos: tuple[int, int],
         angle,
+        damage,
         direction,
         *groups: pygame.sprite.AbstractGroup
     ) -> None:
         super().__init__(*groups)
         self.time_alive = 1500
-        self.time_started = pygame.time.get_ticks()
+        self.damage = damage
+        self.game_clock = GameClock()
+        self.time_started = self.game_clock.get_time()
         self.image = pygame.image.load("assets/bullet.png").convert_alpha()
         self.image = pygame.transform.rotate(self.image, angle)
         self.rect = self.image.get_frect(center=pos)
@@ -26,7 +30,8 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x += self.direction.x * self.speed * dt
         self.rect.y += self.direction.y * self.speed * dt
 
-        if pygame.time.get_ticks() - self.time_started > self.time_alive:
+        now = self.game_clock.get_time()
+        if now - self.time_started > self.time_alive:
             self.kill()
 
 
@@ -50,51 +55,10 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.image = self.images[self.facing]
 
 
-class PlayerExp:
-    def __init__(self):
-        self.lvl = 1
-        self.exp = 0.0
-        self._exp_to_next_lvl = 0.0
-        self._total_exp = 0.0
-
-    @property
-    def total_exp(self) -> float:
-        self._total_exp = self._get_total_exp(self.lvl)
-        return float(self._total_exp + self.exp)
-
-    @property
-    def exp_to_next_level(self) -> float:
-        if self.lvl < 0:
-            raise ValueError("Invalid value for level")
-
-        total_exp_to_next_lvl = self._get_total_exp(self.lvl + 1)
-        return total_exp_to_next_lvl - self.total_exp
-
-    def _get_total_exp(self, lvl: int):
-        n = lvl
-        return (5 * (n**3)) / 4
-
-    def add_exp(self, exp_points: float):
-        if exp_points < 0:
-            return
-
-        points = exp_points
-
-        while points >= self.exp_to_next_level:
-            exp_to_next_lvl = self.exp_to_next_level
-            points -= exp_to_next_lvl
-            self.lvl += 1
-
-        self.exp += points
-        self._total_exp = self.total_exp
-
-
 class PlayerStats:
     def __init__(self):
         self._health = 100
-        self._energy = 100
         self.max_health = 100
-        self.max_energy = 100
 
     @property
     def health(self) -> int:
@@ -106,25 +70,14 @@ class PlayerStats:
         value = max(0, value)
         self._health = value
 
-    @property
-    def energy(self) -> int:
-        return self._energy
-
-    @energy.setter
-    def energy(self, value: int):
-        value = min(value, self.max_energy)
-        value = max(0, value)
-        self._energy = value
-
 
 class Player:
     def __init__(self, pos: tuple[int, int]):
         self.player_sprite = PlayerSprite(pos)
         self.direction = pygame.math.Vector2()
-        self.speed = 150
+        self.speed = 150.0
         self.target_direction = pygame.math.Vector2()
         self.stats = PlayerStats()
-        self.exp = PlayerExp()
 
     def update(self, dt: float):
         if self.direction.magnitude() != 0:
