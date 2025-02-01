@@ -15,10 +15,10 @@ class CollectibleType(Enum):
 def get_collectible_probability() -> dict[CollectibleType, float]:
     return {
         CollectibleType.HEALTH: 0.10,
-        CollectibleType.GUN: 0.005,
-        CollectibleType.BULLET: 0.005,
-        CollectibleType.FIRE: 0.005,
-        CollectibleType.GAS: 0.005,
+        CollectibleType.GUN: 0.015,
+        CollectibleType.BULLET: 0.015,
+        CollectibleType.FIRE: 0.015,
+        CollectibleType.GAS: 0.015,
     }
 
 
