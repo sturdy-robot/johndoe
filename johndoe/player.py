@@ -3,39 +3,6 @@ import math
 from .game_clock import GameClock
 
 
-class Bullet(pygame.sprite.Sprite):
-    def __init__(
-        self,
-        pos: tuple[int, int],
-        angle,
-        damage,
-        direction,
-        *groups: pygame.sprite.AbstractGroup
-    ) -> None:
-        super().__init__(*groups)
-        self.time_alive = 1500
-        self.damage = damage
-        self.game_clock = GameClock()
-        self.time_started = self.game_clock.get_time()
-        self.image = pygame.image.load("assets/bullet.png").convert_alpha()
-        self.image = pygame.transform.rotate(self.image, angle)
-        self.image = pygame.transform.scale_by(self.image, 1.5)
-        self.rect = self.image.get_frect(center=pos)
-        self.angle = math.radians(angle)
-        self.speed = 350
-        self.direction = direction
-
-    def update(self, dt: float):
-        if self.direction.magnitude() != 0:
-            self.direction = self.direction.normalize()
-        self.rect.x += self.direction.x * self.speed * dt
-        self.rect.y += self.direction.y * self.speed * dt
-
-        now = self.game_clock.get_time()
-        if now - self.time_started > self.time_alive:
-            self.kill()
-
-
 class PlayerSprite(pygame.sprite.Sprite):
     def __init__(self, pos: tuple[int, int], *groups: pygame.sprite.AbstractGroup):
         super().__init__(*groups)

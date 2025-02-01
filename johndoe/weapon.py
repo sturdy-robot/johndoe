@@ -4,13 +4,18 @@ import pygame
 import math
 from enum import Enum, auto
 from .singleton import Singleton
-from .player import Bullet, Player, PlayerStats
 from .game_clock import GameClock
 
 
 class WeaponType(Enum):
     GUN = auto()
     FIRE = auto()
+
+
+bullet_spr = {
+    WeaponType.GUN: pygame.image.load("assets/bullet.png"),
+    WeaponType.FIRE: pygame.image.load("assets/fire_bullet_spr.png"),
+}
 
 
 class Weapon:
@@ -47,9 +52,43 @@ class Weapon:
         pass
 
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(
+        self,
+        pos: tuple[int, int],
+        bullet_type: WeaponType,
+        angle,
+        damage,
+        direction,
+        *groups: pygame.sprite.AbstractGroup
+    ) -> None:
+        super().__init__(*groups)
+        self.time_alive = 1500
+        self.damage = damage
+        self.game_clock = GameClock()
+        self.time_started = self.game_clock.get_time()
+        self.image = bullet_spr[bullet_type].convert_alpha()
+        self.image = pygame.transform.rotate(self.image, angle)
+        self.rect = self.image.get_frect(center=pos)
+        self.angle = math.radians(angle)
+        self.speed = 350
+        self.direction = direction
+
+    def update(self, dt: float):
+        if self.direction.magnitude() != 0:
+            self.direction = self.direction.normalize()
+        self.rect.x += self.direction.x * self.speed * dt
+        self.rect.y += self.direction.y * self.speed * dt
+
+        now = self.game_clock.get_time()
+        if now - self.time_started > self.time_alive:
+            self.kill()
+
+
 class GunWeapon(Weapon):
     def __init__(self, player, enemies, damage, cooldown, speed, projectiles):
         super().__init__(player, enemies, damage, cooldown, speed, projectiles)
+        self.weapon_type = WeaponType.GUN
 
     def update(self, dt: float):
         return super().update(dt)
@@ -63,21 +102,25 @@ class GunWeapon(Weapon):
             ),
         )
         for i in range(self.num_projectiles):
-            closest_enemy = enemies[i]
-            closest_enemy_rect = pygame.math.Vector2(closest_enemy.rect.center)
-            direction = (
-                (closest_enemy_rect - player_pos).normalize()
-                if closest_enemy_rect != player_pos
-                else pygame.math.Vector2(0, 0)
-            )
-            angle = player_pos.angle_to(closest_enemy_rect)
-            Bullet(
-                self.player.sprite.rect.center,
-                angle,
-                self.damage,
-                direction,
-                self.projectiles,
-            )
+            try:
+                closest_enemy = enemies[i]
+                closest_enemy_rect = pygame.math.Vector2(closest_enemy.rect.center)
+                direction = (
+                    (closest_enemy_rect - player_pos).normalize()
+                    if closest_enemy_rect != player_pos
+                    else pygame.math.Vector2(0, 0)
+                )
+                _, angle = direction.as_polar()
+                Bullet(
+                    self.player.sprite.rect.center,
+                    self.weapon_type,
+                    -angle,
+                    self.damage,
+                    direction,
+                    self.projectiles,
+                )
+            except IndexError:
+                pass
 
 
 class FireWeapon(Weapon):
@@ -91,12 +134,30 @@ class FireWeapon(Weapon):
         projectiles: pygame.sprite.AbstractGroup,
     ):
         super().__init__(player, enemies, damage, cooldown, speed, projectiles)
+        self.weapon_type = WeaponType.FIRE
 
     def update(self, dt: float):
         return super().update(dt)
 
     def attack(self, dt: float):
-        return super().attack(dt)
+        player_pos = pygame.math.Vector2(self.player.sprite.rect.center)
+        for i in range(self.num_projectiles):
+            enemy_rect = random.choice(self.enemies.sprites()).rect
+            enemy_rect_center = pygame.math.Vector2(enemy_rect.center)
+            direction = (
+                (enemy_rect_center - player_pos).normalize()
+                if enemy_rect_center != player_pos
+                else pygame.math.Vector2(0, 0)
+            )
+            _, angle = direction.as_polar()
+            Bullet(
+                self.player.sprite.rect.center,
+                self.weapon_type,
+                -angle,
+                self.damage,
+                direction,
+                self.projectiles,
+            )
 
 
 WEAPON_FACTORY = {

@@ -3,7 +3,6 @@ import pygame
 from pygame.freetype import Font
 import random
 
-from johndoe import collectibles
 from johndoe.enemy import Enemy
 from johndoe.game_clock import GameClock
 from johndoe.weapon import WeaponManager, WeaponType
@@ -18,6 +17,7 @@ from .player import Player
 from .camera import Camera
 from .ui import UI
 from .scene_manager import SceneManager
+from .scores import ScoreKeeper
 
 
 class WorldScene(Scene):
@@ -33,11 +33,12 @@ class WorldScene(Scene):
         self.active_collectibles = self.get_default_collectibles()
         self.collectibles_spr = pygame.sprite.Group()
         self.font = Font("assets/Silver.ttf", size=30)
+        self.score_keeper = ScoreKeeper()
         self.font.antialiased = False
         self.game_clock = GameClock()
         self.player_score = 0
         self.min_enemies = 5
-        self.max_enemies = 20
+        self.max_enemies = 50
         self.min_health = 10
         self.max_health = 20
         self.update_enemy_max_count = 2 * 60 * 1000
@@ -53,9 +54,12 @@ class WorldScene(Scene):
         self.ui = None
         self.spr_enemies = [
             pygame.image.load("assets/enemy1_spr.png").convert_alpha(),
-            pygame.image.load("assets/vindoe_spr.png").convert_alpha(),
+            pygame.image.load("assets/enemy2_spr.png").convert_alpha(),
+            pygame.image.load("assets/enemy3_spr.png").convert_alpha(),
+            pygame.image.load("assets/enemy4_spr.png").convert_alpha(),
+            pygame.image.load("assets/enemy5_spr.png").convert_alpha(),
         ]
-        self.enemy_spawn_cooldown = 10000
+        self.enemy_spawn_cooldown = 5000
         self.last_enemy_spawn = 0
         self.scene_manager = SceneManager()
 
@@ -97,6 +101,9 @@ class WorldScene(Scene):
 
     def check_is_game_over(self):
         if self.player.stats.health <= 0:
+            self.score_keeper.write_scores(
+                self.player_score, self.game_clock.get_time()
+            )
             self.scene_manager.change_scene("game_over")
 
     def check_enemy_spawn_time(self):
@@ -110,7 +117,9 @@ class WorldScene(Scene):
             self.max_enemies *= 1.25
             self.max_enemies = int(self.max_enemies)
             self.min_health *= 1.05
+            self.min_health = int(self.min_health)
             self.max_health *= 1.05
+            self.max_health = int(self.max_health)
             self.player.speed *= 1.10
             self.last_update_count = now
 
@@ -129,8 +138,11 @@ class WorldScene(Scene):
             health = random.randint(self.min_health, self.max_health)
             damage = random.randint(1, 10)
             shield = random.randint(1, 10)
+            speed = random.randint(20, 60)
             self.enemies.append(
-                Enemy(sprite, 50, self.player_sprite_group, pos, health, shield, damage)
+                Enemy(
+                    sprite, speed, self.player_sprite_group, pos, health, shield, damage
+                )
             )
         self.enemies_spr.add([enemy.sprite for enemy in self.enemies])
         self.last_enemy_spawn = self.game_clock.get_time()
@@ -206,6 +218,15 @@ class WorldScene(Scene):
                         self.weapons.add_weapon(WeaponType.FIRE)
                     case CollectibleType.GAS:
                         self.weapons.add_projectiles(WeaponType.FIRE)
+                self.max_enemies *= 1.05
+                self.min_enemies *= 1.05
+                self.max_enemies = int(self.max_enemies)
+                self.min_enemies = int(self.min_enemies)
+                self.max_health *= 1.15
+                self.max_health = int(self.max_health)
+                self.min_health *= 1.15
+                self.min_health = int(self.min_health)
+
                 collectible.kill()
 
     def handle_collisions(self, dt: float):

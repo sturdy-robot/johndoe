@@ -15,3 +15,12 @@ Here the game starts slow, but at every 2 minutes, the player gets a bit faster,
 The player collects more points with more enemies he kills. You can collect weapons that are dropped by enemies to make your weapons stronger as well.
 
 The goal is to get the highest score you can in the highest amount of time.
+
+
+## How to play
+
+Arrow keys: Up, down, left right to move.
+
+The player attacks automatically.
+
+Have fun!

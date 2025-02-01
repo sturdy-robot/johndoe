@@ -3,6 +3,7 @@ from pygame.freetype import Font
 from .scene import Scene
 from .definitions import WIDTH, HEIGHT
 from .scene_manager import SceneManager
+from .scores import ScoreKeeper
 
 
 class GameOverScene(Scene):
@@ -12,6 +13,7 @@ class GameOverScene(Scene):
         self.font.antialiased = False
         self.surfaces: list[tuple[pygame.Surface, pygame.Rect]] = []
         self.scene_manager = SceneManager()
+        self.score_keeper = ScoreKeeper()
 
     def setup(self):
         self.surfaces.clear()
@@ -23,7 +25,14 @@ class GameOverScene(Scene):
         )
         press_r_rect.center = game_over_rect.center
         press_r_rect.centery += 15 + press_r_rect.height
+        high_score = self.score_keeper.read_scores()[-1]["score"]
+        high_score_surf, high_score_rect = self.font.render(
+            f"Your score was: {high_score}", (255, 255, 255), size=20
+        )
+        high_score_rect.center = press_r_rect.center
+        high_score_rect.centery += 15 + high_score_rect.height
         self.surfaces.append((press_r_surf, press_r_rect))
+        self.surfaces.append((high_score_surf, high_score_rect))
 
     def update(self, dt: float):
         pass

@@ -5,6 +5,7 @@ from .scene_manager import SceneManager
 from .title_scene import TitleScene
 from .world import WorldScene
 from .game_over_scene import GameOverScene
+from .high_score_scene import HighScoreScene
 
 
 class Game:
@@ -26,6 +27,7 @@ class Game:
         self.scene_manager.add_scene("title", TitleScene())
         self.scene_manager.add_scene("level", WorldScene())
         self.scene_manager.add_scene("game_over", GameOverScene())
+        self.scene_manager.add_scene("high_score", HighScoreScene())
         self.scene_manager.change_scene("title")
 
     def update(self, dt: float):
